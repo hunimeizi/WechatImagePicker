@@ -1,14 +1,26 @@
 # wechatImagePicker 仿微信选择图片
 
 #### 使用方法
+1.使用gradle
+```js
+repositories {
+  google()
+  mavenCentral()
+}
 
-1.先获取读写手机存储权限，此处不再赘述
+dependencies {
+  implementation 'io.github.hunimeizi:haolinWechatImagePicker:1.0.0'
+}
+```
 
-2.设置ImageLoader
+
+2.先获取读写手机存储权限，此处不再赘述
+
+3.设置ImageLoader
 ```js
     ImagePicker.getInstance().imageLoader(CoilIVLoader())
 ```
-3.进行参数设置
+4.进行参数设置
 ```js
  ImagePicker.getInstance()
             .multiMode(false) //多选
@@ -24,7 +36,7 @@
             }
             .startImagePicker(this)
 ```
-4.回调
+5.回调
 ```js
 override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
