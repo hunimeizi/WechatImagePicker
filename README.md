@@ -3,6 +3,7 @@
 #### 使用方法
 
 1.先获取读写手机存储权限，此处不再赘述
+
 2.设置ImageLoader
 ```js
     ImagePicker.getInstance().imageLoader(CoilIVLoader())
