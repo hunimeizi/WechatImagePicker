@@ -9,7 +9,7 @@ repositories {
 }
 
 dependencies {
-  implementation 'io.github.hunimeizi:haolinWechatImagePicker:1.0.0'
+  implementation 'io.github.hunimeizi:haolinWechatImagePickerRelease:1.0.0'
 }
 ```
 
