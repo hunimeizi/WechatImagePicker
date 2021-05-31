@@ -50,7 +50,7 @@ ext {
     PUBLISH_VERSION = versionName
     // These should be module-dependent
     PUBLISH_ARTIFACT_ID = 'haolinPicturePicker'
-    ARTIFACT_DESCRIPTION = "ARabbit is a sdk for faster android app development."
+    ARTIFACT_DESCRIPTION = "仿微信图片选择器"
     uploadJavadocs = false
     uploadSources = false
     PROJECT_NAME = 'https://github.com/hunimeizi/WechatImagePicker'
