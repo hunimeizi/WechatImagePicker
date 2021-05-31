@@ -213,14 +213,14 @@ class ImagePicker private constructor() {
         if (cameraIntent.resolveActivity(activity.packageManager) != null ||
             activity.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)
         ) {
-            if (VERSION.SDK_INT == VERSION_CODES.Q) {
-                val photoUri = createImageUri(activity)
-                cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
-                cameraIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                cameraIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-                activity.startActivityForResult(cameraIntent, requestCode)
-                return
-            }
+//            if (VERSION.SDK_INT == VERSION_CODES.Q) {
+//                val photoUri = createImageUri(activity)
+//                cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
+//                cameraIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+//                cameraIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+//                activity.startActivityForResult(cameraIntent, requestCode)
+//                return
+//            }
             createCameraTempImageFile(activity)
             if (takeImageFile != null && takeImageFile!!.isFile) {
                 val imageUri: Uri = if (VERSION.SDK_INT >= VERSION_CODES.N)
@@ -347,9 +347,9 @@ class ImagePicker private constructor() {
         }
         //设置文件类型
         contentValues.put(MediaStore.Images.Media.MIME_TYPE, "image/JPEG")
-        //执行insert操作，向系统文件夹中添加文件
+        //执行insert操作，向系统文件夹中添加文件x
         //EXTERNAL_CONTENT_URI代表外部存储器，该值不变
-        return activity.getContentResolver().insert(
+        return activity.contentResolver.insert(
             MediaStore.Images.Media.getContentUri("external"),
             contentValues
         )
@@ -534,7 +534,7 @@ class ImagePicker private constructor() {
         @JvmStatic
         fun galleryAddPic(context: Context, file: File?) {
             if (file == null) return
-            MediaScannerConnection.scanFile(context, arrayOf(file.toString()),
+            MediaScannerConnection.scanFile(context, arrayOf(file.absolutePath),
                 arrayOf(file.name), null)
         }
     }
