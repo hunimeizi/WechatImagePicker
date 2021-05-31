@@ -1,9 +1,11 @@
 package com.haolin.android.imagepickerlibrary.imagepicker
 
 import android.app.Activity
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
@@ -12,6 +14,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.view.View
+import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.content.FileProvider
@@ -23,10 +26,9 @@ import com.haolin.android.imagepickerlibrary.imagepicker.bean.ImageItem
 import com.haolin.android.imagepickerlibrary.imagepicker.loader.ImageLoader
 import com.haolin.android.imagepickerlibrary.imagepicker.ui.ImageGridActivity
 import com.haolin.android.imagepickerlibrary.imagepicker.ui.ImageViewerActivity
-import com.haolin.android.imagepickerlibrary.imagepicker.util.ProviderUtil
-import com.haolin.android.imagepickerlibrary.imagepicker.util.Utils
 import com.haolin.android.imagepickerlibrary.imagepicker.view.CropImageView
 import java.io.File
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -205,37 +207,42 @@ class ImagePicker private constructor() {
     /**
      * 拍照的方法
      */
-    @Deprecated("")
     fun takePicture(activity: Activity, requestCode: Int) {
-        val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-        takePictureIntent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
-        if (takePictureIntent.resolveActivity(activity.packageManager) != null) {
-            takeImageFile = if (Utils.existSDCard()) File(Environment.getExternalStorageDirectory(), "/DCIM/camera/") else Environment.getDataDirectory()
-            takeImageFile = createFile(takeImageFile, "IMG_", ".jpg")
-            // 默认情况下，即不需要指定intent.putExtra(MediaStore.EXTRA_OUTPUT, uri);
-            // 照相机有自己默认的存储路径，拍摄的照片将返回一个缩略图。如果想访问原始图片，
-            // 可以通过dat extra能够得到原始图片位置。即，如果指定了目标uri，data就没有数据，
-            // 如果没有指定uri，则data就返回有数据！
-            val uri: Uri
-            if (VERSION.SDK_INT <= VERSION_CODES.M) {
-                uri = Uri.fromFile(takeImageFile)
-            } else {
-                /**
-                 * 7.0 调用系统相机拍照不再允许使用Uri方式，应该替换为FileProvider
-                 * 并且这样可以解决MIUI系统上拍照返回size为0的情况
-                 */
-                uri = FileProvider.getUriForFile(activity, ProviderUtil.getFileProviderName(activity), takeImageFile!!)
-                //加入uri权限 要不三星手机不能拍照
-                val resInfoList = activity.packageManager.queryIntentActivities(takePictureIntent, PackageManager.MATCH_DEFAULT_ONLY)
-                for (resolveInfo in resInfoList) {
-                    val packageName = resolveInfo.activityInfo.packageName
-                    activity.grantUriPermission(packageName, uri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
+        val cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+
+        if (cameraIntent.resolveActivity(activity.packageManager) != null ||
+            activity.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)
+        ) {
+            if (VERSION.SDK_INT == VERSION_CODES.Q) {
+                val photoUri = createImageUri(activity)
+                cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
+                cameraIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                cameraIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                activity.startActivityForResult(cameraIntent, requestCode)
+                return
             }
-            Log.e("nanchen", ProviderUtil.getFileProviderName(activity))
-            takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, uri)
+            createCameraTempImageFile(activity)
+            if (takeImageFile != null && takeImageFile!!.isFile) {
+                val imageUri: Uri = if (VERSION.SDK_INT >= VERSION_CODES.N)
+                    FileProvider.getUriForFile(activity, activity.packageName+".fileprovider", takeImageFile!!)
+                else Uri.fromFile(takeImageFile)
+                cameraIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) //对目标应用临时授权该Uri所代表的文件
+                cameraIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION) //对目标应用临时授权该Uri所代表的文件
+                cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri) //将拍取的照片保存到指定URI
+                activity.startActivityForResult(cameraIntent, requestCode)
+            } else {
+                Toast.makeText(
+                    activity, "图片错误",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        } else {
+            Toast.makeText(
+                activity,
+                "无法启动相机！",
+                Toast.LENGTH_SHORT
+            ).show()
         }
-        activity.startActivityForResult(takePictureIntent, requestCode)
     }
 
     fun addOnPictureSelectedListener(l: OnPictureSelectedListener) {
@@ -305,7 +312,9 @@ class ImagePicker private constructor() {
     fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (resultCode == RESULT_CODE_ITEMS) {
             if (data != null && requestCode == 100) {
-                val images: ArrayList<ImageItem?> = data.getParcelableArrayListExtra(EXTRA_RESULT_ITEMS)!!
+                val images: ArrayList<ImageItem?> = data.getParcelableArrayListExtra(
+                    EXTRA_RESULT_ITEMS
+                )!!
                 if (onImageSelectedListener != null) {
                     onImageSelectedListener!!.onImageSelected(images)
                 }
@@ -319,6 +328,67 @@ class ImagePicker private constructor() {
         }
     }
 
+    /**
+     * 创建图片地址uri,用于保存拍照后的照片 Android 10以后使用这种方法
+     */
+    private fun createImageUri(activity: Activity): Uri? {
+        //设置保存参数到ContentValues中
+        val contentValues = ContentValues()
+        //设置文件名
+        contentValues.put(
+            MediaStore.Images.Media.DISPLAY_NAME,
+            System.currentTimeMillis().toString()
+        )
+        //兼容Android Q和以下版本
+        if (VERSION.SDK_INT >= VERSION_CODES.Q) {
+            //android Q中不再使用DATA字段，而用RELATIVE_PATH代替
+            //RELATIVE_PATH是相对路径不是绝对路径;照片存储的地方为：存储/Pictures
+            contentValues.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures")
+        }
+        //设置文件类型
+        contentValues.put(MediaStore.Images.Media.MIME_TYPE, "image/JPEG")
+        //执行insert操作，向系统文件夹中添加文件
+        //EXTERNAL_CONTENT_URI代表外部存储器，该值不变
+        return activity.getContentResolver().insert(
+            MediaStore.Images.Media.getContentUri("external"),
+            contentValues
+        )
+    }
+
+    private fun createCameraTempImageFile(activity: Activity) {
+        var dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+        if (null == dir) {
+            dir = File(
+                Environment.getExternalStorageDirectory(),
+                File.separator + "DCIM" + File.separator + "Camera" + File.separator
+            )
+        }
+        if (!dir.isDirectory) {
+            if (!dir.mkdirs()) {
+                dir = activity.getExternalFilesDir(null)
+                if (null == dir || !dir.exists()) {
+                    dir = activity.filesDir
+                    if (null == dir || !dir.exists()) {
+                        dir = activity.filesDir
+                        if (null == dir || !dir.exists()) {
+                            val cacheDirPath =
+                                File.separator + "data" + File.separator + "data" + File.separator + activity.packageName + File.separator + "cache" + File.separator
+                            dir = File(cacheDirPath)
+                            if (!dir.exists()) {
+                                dir.mkdirs()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        takeImageFile = try {
+            File.createTempFile("IMG", ".jpg", dir)
+        } catch (e: IOException) {
+            e.printStackTrace()
+            null
+        }
+    }
     @JvmOverloads
     fun startPhotoPicker(activity: Activity, clazz: Class<*>? = ImageGridActivity::class.java) {
         if (onImageSelectedListener == null) {
@@ -382,13 +452,24 @@ class ImagePicker private constructor() {
     }
 
     @JvmOverloads
-    fun startImageViewer(activity: Activity, images: List<String?>?, view: View? = null, position: Int = 0) {
-        if (images == null || images.size == 0) return
+    fun startImageViewer(
+        activity: Activity,
+        images: List<String?>?,
+        view: View? = null,
+        position: Int = 0
+    ) {
+        if (images == null || images.isEmpty()) return
         instance!!.viewerItem(images)
         val intent = Intent(activity, ImageViewerActivity::class.java)
         intent.putExtra(EXTRA_SELECTED_IMAGE_POSITION, position)
         if (VERSION.SDK_INT >= VERSION_CODES.LOLLIPOP && instance!!.isShareView && view != null) {
-            val option = ActivityOptionsCompat.makeSceneTransitionAnimation(activity, Pair.create(view, activity.getString(R.string.share_view_photo) + position))
+            val option = ActivityOptionsCompat.makeSceneTransitionAnimation(
+                activity, Pair.create(
+                    view, activity.getString(
+                        R.string.share_view_photo
+                    ) + position
+                )
+            )
             ActivityCompat.startActivity(activity, intent, option.toBundle())
         } else {
             activity.startActivity(intent)
@@ -452,10 +533,9 @@ class ImagePicker private constructor() {
          */
         @JvmStatic
         fun galleryAddPic(context: Context, file: File?) {
-            val mediaScanIntent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE)
-            val contentUri = Uri.fromFile(file)
-            mediaScanIntent.data = contentUri
-            context.sendBroadcast(mediaScanIntent)
+            if (file == null) return
+            MediaScannerConnection.scanFile(context, arrayOf(file.toString()),
+                arrayOf(file.name), null)
         }
     }
 }
