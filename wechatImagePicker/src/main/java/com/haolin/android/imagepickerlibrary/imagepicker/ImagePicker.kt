@@ -356,17 +356,12 @@ class ImagePicker private constructor() {
     }
 
     private fun createCameraTempImageFile(activity: Activity) {
-        var dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-        if (null == dir) {
-            dir = File(
-                Environment.getExternalStorageDirectory(),
-                File.separator + "DCIM" + File.separator + "Camera" + File.separator
-            )
-        }
+        var dir = File(Environment.getExternalStorageDirectory().absolutePath +"/"+ Environment.DIRECTORY_PICTURES+"/"
+        +"haolinPicturePicker")
         if (!dir.isDirectory) {
             if (!dir.mkdirs()) {
-                dir = activity.getExternalFilesDir(null)
-                if (null == dir || !dir.exists()) {
+                dir = activity.getExternalFilesDir(null)!!
+                if (!dir.exists()) {
                     dir = activity.filesDir
                     if (null == dir || !dir.exists()) {
                         dir = activity.filesDir

@@ -9,7 +9,7 @@ repositories {
 }
 
 dependencies {
-  implementation 'io.github.hunimeizi:haolinPicturePicker:1.0.2'
+  implementation 'io.github.hunimeizi:haolinPicturePicker:1.0.3'
 }
 ```
 
