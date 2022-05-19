@@ -72,7 +72,6 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == 1) {
             for (i in permissions.indices) {
                 if (grantResults[i] == PERMISSION_GRANTED) { //选择了“始终允许”
-
                 } else {
                     if (!ActivityCompat.shouldShowRequestPermissionRationale(
                             this,
