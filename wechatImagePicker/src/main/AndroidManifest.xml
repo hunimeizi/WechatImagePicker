@@ -6,10 +6,14 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.CAMERA" />
     <application>
-        <activity android:name=".imagepicker.ui.ImageCropActivity" />
-        <activity android:name=".imagepicker.ui.ImageViewerActivity" />
-        <activity android:name=".imagepicker.ui.ImagePreviewActivity" />
-        <activity android:name=".imagepicker.ui.ImageGridActivity" />
+        <activity android:name=".imagepicker.ui.ImageCropActivity"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
+        <activity android:name=".imagepicker.ui.ImageViewerActivity"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
+        <activity android:name=".imagepicker.ui.ImagePreviewActivity"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
+        <activity android:name=".imagepicker.ui.ImageGridActivity"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
