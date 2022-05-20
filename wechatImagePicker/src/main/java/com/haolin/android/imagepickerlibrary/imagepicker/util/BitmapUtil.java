@@ -11,7 +11,7 @@ import android.provider.MediaStore;
 import java.io.File;
 import java.io.IOException;
 
-public class BitmapUtil {
+public  class BitmapUtil {
 
     private BitmapUtil() {
         throw new UnsupportedOperationException("u can't instantiate me...");

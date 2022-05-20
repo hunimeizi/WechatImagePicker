@@ -12,7 +12,6 @@ import android.widget.Toast;
 
 import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.haolin.android.imagepickerlibrary.R;
 import com.haolin.android.imagepickerlibrary.imagepicker.ImagePicker;
 import com.haolin.android.imagepickerlibrary.imagepicker.MediaType;
@@ -46,7 +45,7 @@ public class ImageRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.View
         images = new ArrayList<>();
         mActivity = activity;
         mImageSize = Utils.getImageItemWidth(mActivity);
-        imagePicker = ImagePicker.getInstance();
+        imagePicker = ImagePicker.Companion.getInstance();
         isShowCamera = imagePicker.isShowCamera();
         mSelectedImages = imagePicker.getSelectedImages();
         mInflater = LayoutInflater.from(activity);
@@ -193,14 +192,11 @@ public class ImageRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.View
         void bindCamera() {
             mItemView.setLayoutParams(new AbsListView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, mImageSize)); //让图片是个正方形
             mItemView.setTag(null);
-            mItemView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    if (!((ImageBaseActivity) mActivity).checkPermission(Manifest.permission.CAMERA)) {
-                        ActivityCompat.requestPermissions(mActivity, new String[]{Manifest.permission.CAMERA}, ImageGridActivity.REQUEST_PERMISSION_CAMERA);
-                    } else {
-                        imagePicker.takePicture(mActivity, ImagePicker.REQUEST_CODE_TAKE);
-                    }
+            mItemView.setOnClickListener(v -> {
+                if (!((ImageBaseActivity) mActivity).checkPermission(Manifest.permission.CAMERA)) {
+                    ActivityCompat.requestPermissions(mActivity, new String[]{Manifest.permission.CAMERA}, ImageGridActivity.REQUEST_PERMISSION_CAMERA);
+                } else {
+                    imagePicker.takePicture(mActivity, ImagePicker.REQUEST_CODE_TAKE);
                 }
             });
         }

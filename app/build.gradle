@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId "com.haolin.wechat.image.picker"
-        minSdkVersion 19
+        minSdkVersion 23
         targetSdkVersion 30
         versionCode 1
         versionName "1.0"
@@ -43,4 +43,6 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
     implementation project(':wechatImagePicker')
+    implementation 'com.github.DylanCaiCoding:ActivityResultLauncher:1.1.2'
+    implementation 'io.coil-kt:coil:1.4.0'
 }

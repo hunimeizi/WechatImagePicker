@@ -30,9 +30,7 @@ import android.view.animation.Interpolator;
 import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
 import android.widget.OverScroller;
-
 import com.haolin.android.imagepickerlibrary.imagepicker.util.Util;
-
 
 public class PhotoViewAttacher implements View.OnTouchListener,
         View.OnLayoutChangeListener {

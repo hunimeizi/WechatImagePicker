@@ -9,7 +9,6 @@ import android.widget.ImageView;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager.widget.PagerAdapter;
-
 import com.haolin.android.imagepickerlibrary.R;
 import com.haolin.android.imagepickerlibrary.imagepicker.ImagePicker;
 import com.haolin.android.imagepickerlibrary.imagepicker.photo.OnOutsidePhotoTapListener;
@@ -32,7 +31,7 @@ public class ImagePageAdapter extends PagerAdapter {
     public ImagePageAdapter(AppCompatActivity activity, List<String> images, int position) {
         this.mActivity = activity;
         this.images = images;
-        imagePicker = ImagePicker.getInstance();
+        imagePicker = ImagePicker.Companion.getInstance();
         mPosition = position;
         mIsFromViewr = true;
     }
@@ -40,7 +39,7 @@ public class ImagePageAdapter extends PagerAdapter {
     public ImagePageAdapter(AppCompatActivity activity, List<String> images) {
         this.mActivity = activity;
         this.images = images;
-        imagePicker = ImagePicker.getInstance();
+        imagePicker = ImagePicker.Companion.getInstance();
     }
 
     public void setData(List<String> images) {

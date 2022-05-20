@@ -32,7 +32,7 @@ public class ImageFolderAdapter extends BaseAdapter {
         if (folders != null && folders.size() > 0) imageFolders = folders;
         else imageFolders = new ArrayList<>();
 
-        imagePicker = ImagePicker.getInstance();
+        imagePicker = ImagePicker.Companion.getInstance();
         mImageSize = Utils.getImageItemWidth(mActivity);
         mInflater = (LayoutInflater) activity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     }
