@@ -13,7 +13,7 @@ import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
 import androidx.core.content.FileProvider
-import com.dylanc.activityresult.launcher.StartActivityLauncher
+import com.haolin.activityresultlauncher.launcher.StartActivityLauncher
 import com.haolin.android.imagepickerlibrary.imagepicker.bean.ImageFolder
 import com.haolin.android.imagepickerlibrary.imagepicker.bean.ImageItem
 import com.haolin.android.imagepickerlibrary.imagepicker.loader.ImageLoader
