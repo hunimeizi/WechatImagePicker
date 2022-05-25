@@ -17,10 +17,17 @@ import com.haolin.activityresultlauncher.launcher.StartActivityLauncher
 import com.haolin.android.imagepickerlibrary.imagepicker.bean.ImageFolder
 import com.haolin.android.imagepickerlibrary.imagepicker.bean.ImageItem
 import com.haolin.android.imagepickerlibrary.imagepicker.loader.ImageLoader
+import com.haolin.android.imagepickerlibrary.imagepicker.ui.AbstractImageGridActivity
+import com.haolin.android.imagepickerlibrary.imagepicker.ui.AbstractImageGridActivity.Companion.EXTRAS_TAKE_PICKERS
 import com.haolin.android.imagepickerlibrary.imagepicker.ui.ImageGridActivity
+import com.haolin.android.imagepickerlibrary.imagepicker.util.ProviderUtil
+import com.haolin.android.imagepickerlibrary.imagepicker.util.Utils
 import com.haolin.android.imagepickerlibrary.imagepicker.view.CropImageView
 import java.io.File
 import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.*
+import kotlin.collections.ArrayList
 
 class ImagePicker private constructor() {
 
@@ -46,7 +53,7 @@ class ImagePicker private constructor() {
         private set
     var focusHeight = 280 //焦点框的高度
         private set
-    val imageLoader : ImageLoader by lazy { CoilIVLoader() }//图片加载器
+    val imageLoader: ImageLoader by lazy { CoilIVLoader() }//图片加载器
     var style: CropImageView.Style? = CropImageView.Style.RECTANGLE //裁剪框的形状
         private set
     private var cropCacheFolder: File? = null
@@ -203,21 +210,45 @@ class ImagePicker private constructor() {
         currentImageFolderPosition = 0
     }
 
-    @JvmOverloads
-    fun startImagePicker() {
-        if (onImageSelectedListener == null) {
+    /**
+     * 直接打开照相机
+     */
+    fun takePhoto() {
+        if(onImageSelectedListener == null) {
             Log.e(TAG, "\n\n\nOnImageSelectedListener is null , will not return any data\n\n\n")
         }
-        activityResultCaller?.launch<ImageGridActivity>{ resultCode, data ->
-            if (data != null && resultCode == 1004) {
-                val images: ArrayList<ImageItem?> = data.getParcelableArrayListExtra(
+        multiMode(false)
+        instance.selectLimit(1)
+        activityResultCaller?.launch<ImageGridActivity>(
+            EXTRAS_TAKE_PICKERS to true
+        ) { _, data ->
+            onActivityResult(RESULT_CODE_ITEMS, 100, data)
+        }
+    }
+
+    /**
+     * 图片选择
+     */
+    fun startImagePicker() {
+        if(onImageSelectedListener == null) {
+            Log.e(TAG, "\n\n\nOnImageSelectedListener is null , will not return any data\n\n\n")
+        }
+        activityResultCaller?.launch<ImageGridActivity> { resultCode, data ->
+            onActivityResult(RESULT_CODE_ITEMS, 100, data)
+        }
+    }
+
+    private fun onActivityResult(resultCode: Int, requestCode: Int, data: Intent?) {
+        if(resultCode == RESULT_CODE_ITEMS) {
+            if(requestCode == 100) {
+                val images: ArrayList<ImageItem?> = data?.getParcelableArrayListExtra(
                     EXTRA_RESULT_ITEMS
                 )!!
-                if (onImageSelectedListener != null) {
+                if(onImageSelectedListener != null) {
                     onImageSelectedListener!!.onImageSelected(images)
                 }
             } else {
-                if (onImageSelectedListener != null) {
+                if(onImageSelectedListener != null) {
                     onImageSelectedListener!!.onImageSelected(null)
                 }
             }
@@ -243,21 +274,20 @@ class ImagePicker private constructor() {
         focusWidth = savedInstanceState.getInt("focusWidth")
         focusHeight = savedInstanceState.getInt("focusHeight")
     }
+
     /**
      * 拍照的方法
      */
-    fun takePicture(activity: Activity, requestCode: Int) {
+    internal fun takePicture(activity: Activity, requestCode: Int) {
         val cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
 
-        if(cameraIntent.resolveActivity(activity.packageManager) != null ||
+        if (cameraIntent.resolveActivity(activity.packageManager) != null ||
             activity.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)
         ) {
             createCameraTempImageFile(activity)
-            if(takeImageFile != null && takeImageFile!!.isFile) {
-                val imageUri: Uri = if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
-                    FileProvider.getUriForFile(activity,
-                        activity.packageName + ".fileprovider",
-                        takeImageFile!!)
+            if (takeImageFile != null && takeImageFile!!.isFile) {
+                val imageUri: Uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+                    FileProvider.getUriForFile(activity, activity.packageName+".fileprovider", takeImageFile!!)
                 else Uri.fromFile(takeImageFile)
                 cameraIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) //对目标应用临时授权该Uri所代表的文件
                 cameraIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION) //对目标应用临时授权该Uri所代表的文件
@@ -277,7 +307,6 @@ class ImagePicker private constructor() {
             ).show()
         }
     }
-
 
     private fun createCameraTempImageFile(activity: Activity) {
         var dir =
@@ -344,7 +373,7 @@ class ImagePicker private constructor() {
          */
         @JvmStatic
         fun galleryAddPic(context: Context, file: File?) {
-            if (file == null) return
+            if(file == null) return
             MediaScannerConnection.scanFile(context, arrayOf(file.absolutePath),
                 arrayOf(file.name), null)
         }
@@ -369,23 +398,23 @@ class ImagePicker private constructor() {
     }
 
     fun addOnPictureSelectedListener(l: OnPictureSelectedListener) {
-        if (mImageSelectedListeners == null) mImageSelectedListeners = ArrayList()
+        if(mImageSelectedListeners == null) mImageSelectedListeners = ArrayList()
         mImageSelectedListeners!!.add(l)
     }
 
     fun removeOnPictureSelectedListener(l: OnPictureSelectedListener) {
-        if (mImageSelectedListeners == null) return
+        if(mImageSelectedListeners == null) return
         mImageSelectedListeners!!.remove(l)
     }
 
     fun addSelectedImageItem(position: Int, item: ImageItem, isAdd: Boolean) {
-        if (isAdd) selectedImages!!.add(item) else selectedImages!!.remove(item)
+        if(isAdd) selectedImages!!.add(item) else selectedImages!!.remove(item)
         notifyImageSelectedChanged(position, item, isAdd)
     }
 
     private fun notifyImageSelectedChanged(position: Int, item: ImageItem, isAdd: Boolean) {
-        if (mImageSelectedListeners == null) return
-        for (l in mImageSelectedListeners!!) {
+        if(mImageSelectedListeners == null) return
+        for(l in mImageSelectedListeners!!) {
             l.onImageSelected(position, item, isAdd)
         }
     }

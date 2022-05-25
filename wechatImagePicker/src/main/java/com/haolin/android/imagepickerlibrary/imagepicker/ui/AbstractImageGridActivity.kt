@@ -30,7 +30,8 @@ import com.haolin.android.imagepickerlibrary.imagepicker.view.GridSpacingItemDec
 
 abstract class AbstractImageGridActivity : ImageBaseActivity(),
     ImageDataSource.OnImagesLoadedListener,
-    ImageRecyclerAdapter.OnImageItemClickListener, ImagePicker.OnPictureSelectedListener, View.OnClickListener {
+    ImageRecyclerAdapter.OnImageItemClickListener, ImagePicker.OnPictureSelectedListener,
+    View.OnClickListener {
     lateinit var imagePicker: ImagePicker
     var isOrigin = false //是否选中原图
     var footer_bar //底部栏
@@ -122,21 +123,18 @@ abstract class AbstractImageGridActivity : ImageBaseActivity(),
     }
 
     private fun detectPhoto() {
-        val data = intent
-        if(data != null && data.extras != null) {
-            directPhoto = data.getBooleanExtra(EXTRAS_TAKE_PICKERS, false) // 默认不是直接打开相机
-            if(directPhoto) {
-                if(!checkPermission(Manifest.permission.CAMERA)) {
-                    ActivityCompat.requestPermissions(this,
-                        arrayOf(Manifest.permission.CAMERA),
-                        REQUEST_PERMISSION_CAMERA)
-                } else {
-                    imagePicker.takePicture(this, ImagePicker.REQUEST_CODE_TAKE)
-                }
+        directPhoto = intent.getBooleanExtra(EXTRAS_TAKE_PICKERS, false) // 默认不是直接打开相机
+        if(directPhoto) {
+            if(!checkPermission(Manifest.permission.CAMERA)) {
+                ActivityCompat.requestPermissions(this,
+                    arrayOf(Manifest.permission.CAMERA),
+                    REQUEST_PERMISSION_CAMERA)
+            } else {
+                imagePicker.takePicture(this, ImagePicker.REQUEST_CODE_TAKE)
             }
-            val images: ArrayList<ImageItem>? = data.getParcelableArrayListExtra(EXTRAS_IMAGES)
-            imagePicker.selectedImages(images)
         }
+        val images: ArrayList<ImageItem>? = intent.getParcelableArrayListExtra(EXTRAS_IMAGES)
+        imagePicker.selectedImages(images)
     }
 
     private fun initEvent() {
