@@ -25,8 +25,10 @@ class MainActivity : AppCompatActivity() {
         ImagePicker.instance
             .activityResultCaller(launcher)
             .multiMode(true) //多选
-            .showCamera(true) //                .selectLimit(9)//最多选几张
+            .showCamera(true) //
+            // .selectLimit(9)//最多选几张
             .crop(false) // 是否裁剪
+            .justTakePictures(true) //是否直接拍照
             .outPutY((DensityUtil.getScreenWidth(this) * 0.8f).toInt()) // 裁剪图片宽
             .outPutX((DensityUtil.getScreenWidth(this) * 0.8f).toInt()) // 裁剪图片高
             .focusWidth((DensityUtil.getScreenWidth(this) * 0.8f).toInt()) //裁剪框 宽

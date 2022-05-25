@@ -125,7 +125,7 @@ abstract class AbstractImagePreviewActivity : ImageBaseActivity(),
             }
         })
         //当点击当前选中按钮的时候，需要根据当前的选中状态添加和移除图片
-        cb_check!!.setOnClickListener { v: View? ->
+        cb_check!!.setOnClickListener {
             val imageItem = mImageItems!![mCurrentPosition]
             val selectLimit = imagePicker!!.selectLimit
             if(cb_check!!.isChecked && selectedImages!!.size >= selectLimit) {

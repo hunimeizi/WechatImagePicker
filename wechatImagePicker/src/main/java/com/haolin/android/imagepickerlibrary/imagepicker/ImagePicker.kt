@@ -70,7 +70,8 @@ class ImagePicker private constructor() {
     private var onImageSelectedListener: OnSelectedListener? = null
     var isShareView = true
         private set
-
+    var justTakePictures = false // 是否只是调用照相机拍照
+        private set
     var viewerItem: List<String>? = null
         private set
 
@@ -78,6 +79,10 @@ class ImagePicker private constructor() {
         isShareView = shareView
     }
 
+    fun justTakePictures(justTakePictures: Boolean): ImagePicker {
+        this.justTakePictures = justTakePictures
+        return this
+    }
 
     fun activityResultCaller(caller: StartActivityLauncher): ImagePicker {
         activityResultCaller = caller
@@ -134,7 +139,7 @@ class ImagePicker private constructor() {
     }
 
     fun getCropCacheFolder(context: Context): File {
-        if(cropCacheFolder == null) {
+        if (cropCacheFolder == null) {
             cropCacheFolder =
                 File(context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.absolutePath!! + "/ImagePicker/cropTemp/")
             cropCacheFolder!!.mkdirs()
@@ -173,12 +178,12 @@ class ImagePicker private constructor() {
     }
 
     val selectImageCount: Int
-        get() = if(selectedImages == null) {
+        get() = if (selectedImages == null) {
             0
         } else selectedImages!!.size
 
     fun selectedImages(selectedImages: ArrayList<ImageItem>?): ImagePicker? {
-        if(selectedImages == null) {
+        if (selectedImages == null) {
             return null
         }
         this.selectedImages = selectedImages
@@ -186,7 +191,7 @@ class ImagePicker private constructor() {
     }
 
     fun clearSelectedImages() {
-        if(selectedImages != null) selectedImages!!.clear()
+        if (selectedImages != null) selectedImages!!.clear()
     }
 
 
@@ -196,59 +201,45 @@ class ImagePicker private constructor() {
     }
 
     fun clear() {
-        if(mImageSelectedListeners != null) {
+        if (mImageSelectedListeners != null) {
             mImageSelectedListeners!!.clear()
             mImageSelectedListeners = null
         }
-        if(mImageFolders != null) {
+        if (mImageFolders != null) {
             mImageFolders!!.clear()
             mImageFolders = null
         }
-        if(selectedImages != null) {
+        if (selectedImages != null) {
             selectedImages!!.clear()
         }
         currentImageFolderPosition = 0
     }
 
     /**
-     * 直接打开照相机
-     */
-    fun takePhoto() {
-        if(onImageSelectedListener == null) {
-            Log.e(TAG, "\n\n\nOnImageSelectedListener is null , will not return any data\n\n\n")
-        }
-        multiMode(false)
-        instance.selectLimit(1)
-        activityResultCaller?.launch<ImageGridActivity>(
-            EXTRAS_TAKE_PICKERS to true
-        ) { _, data ->
-            onActivityResult(RESULT_CODE_ITEMS, 100, data)
-        }
-    }
-
-    /**
      * 图片选择
      */
     fun startImagePicker() {
-        if(onImageSelectedListener == null) {
+        if (onImageSelectedListener == null) {
             Log.e(TAG, "\n\n\nOnImageSelectedListener is null , will not return any data\n\n\n")
         }
-        activityResultCaller?.launch<ImageGridActivity> { resultCode, data ->
-            onActivityResult(RESULT_CODE_ITEMS, 100, data)
+        activityResultCaller?.launch<ImageGridActivity>(
+            EXTRAS_TAKE_PICKERS to justTakePictures
+        ) { resultCode, data ->
+            onActivityResult(resultCode, 100, data)
         }
     }
 
     private fun onActivityResult(resultCode: Int, requestCode: Int, data: Intent?) {
-        if(resultCode == RESULT_CODE_ITEMS) {
-            if(requestCode == 100) {
+        if (resultCode == RESULT_CODE_ITEMS) {
+            if (requestCode == 100) {
                 val images: ArrayList<ImageItem?> = data?.getParcelableArrayListExtra(
                     EXTRA_RESULT_ITEMS
                 )!!
-                if(onImageSelectedListener != null) {
+                if (onImageSelectedListener != null) {
                     onImageSelectedListener!!.onImageSelected(images)
                 }
             } else {
-                if(onImageSelectedListener != null) {
+                if (onImageSelectedListener != null) {
                     onImageSelectedListener!!.onImageSelected(null)
                 }
             }
@@ -287,7 +278,11 @@ class ImagePicker private constructor() {
             createCameraTempImageFile(activity)
             if (takeImageFile != null && takeImageFile!!.isFile) {
                 val imageUri: Uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
-                    FileProvider.getUriForFile(activity, activity.packageName+".fileprovider", takeImageFile!!)
+                    FileProvider.getUriForFile(
+                        activity,
+                        activity.packageName + ".fileprovider",
+                        takeImageFile!!
+                    )
                 else Uri.fromFile(takeImageFile)
                 cameraIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) //对目标应用临时授权该Uri所代表的文件
                 cameraIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION) //对目标应用临时授权该Uri所代表的文件
@@ -310,20 +305,22 @@ class ImagePicker private constructor() {
 
     private fun createCameraTempImageFile(activity: Activity) {
         var dir =
-            File(Environment.getExternalStorageDirectory().absolutePath + "/" + Environment.DIRECTORY_PICTURES + "/"
-                    + "haolinPicturePicker")
-        if(!dir.isDirectory) {
-            if(!dir.mkdirs()) {
+            File(
+                Environment.getExternalStorageDirectory().absolutePath + "/" + Environment.DIRECTORY_PICTURES + "/"
+                        + "haolinPicturePicker"
+            )
+        if (!dir.isDirectory) {
+            if (!dir.mkdirs()) {
                 dir = activity.getExternalFilesDir(null)!!
-                if(!dir.exists()) {
+                if (!dir.exists()) {
                     dir = activity.filesDir
-                    if(null == dir || !dir.exists()) {
+                    if (null == dir || !dir.exists()) {
                         dir = activity.filesDir
-                        if(null == dir || !dir.exists()) {
+                        if (null == dir || !dir.exists()) {
                             val cacheDirPath =
                                 File.separator + "data" + File.separator + "data" + File.separator + activity.packageName + File.separator + "cache" + File.separator
                             dir = File(cacheDirPath)
-                            if(!dir.exists()) {
+                            if (!dir.exists()) {
                                 dir.mkdirs()
                             }
                         }
@@ -333,7 +330,7 @@ class ImagePicker private constructor() {
         }
         takeImageFile = try {
             File.createTempFile("IMG", ".jpg", dir)
-        } catch(e: IOException) {
+        } catch (e: IOException) {
             e.printStackTrace()
             null
         }
@@ -373,9 +370,11 @@ class ImagePicker private constructor() {
          */
         @JvmStatic
         fun galleryAddPic(context: Context, file: File?) {
-            if(file == null) return
-            MediaScannerConnection.scanFile(context, arrayOf(file.absolutePath),
-                arrayOf(file.name), null)
+            if (file == null) return
+            MediaScannerConnection.scanFile(
+                context, arrayOf(file.absolutePath),
+                arrayOf(file.name), null
+            )
         }
     }
 
@@ -398,23 +397,23 @@ class ImagePicker private constructor() {
     }
 
     fun addOnPictureSelectedListener(l: OnPictureSelectedListener) {
-        if(mImageSelectedListeners == null) mImageSelectedListeners = ArrayList()
+        if (mImageSelectedListeners == null) mImageSelectedListeners = ArrayList()
         mImageSelectedListeners!!.add(l)
     }
 
     fun removeOnPictureSelectedListener(l: OnPictureSelectedListener) {
-        if(mImageSelectedListeners == null) return
+        if (mImageSelectedListeners == null) return
         mImageSelectedListeners!!.remove(l)
     }
 
     fun addSelectedImageItem(position: Int, item: ImageItem, isAdd: Boolean) {
-        if(isAdd) selectedImages!!.add(item) else selectedImages!!.remove(item)
+        if (isAdd) selectedImages!!.add(item) else selectedImages!!.remove(item)
         notifyImageSelectedChanged(position, item, isAdd)
     }
 
     private fun notifyImageSelectedChanged(position: Int, item: ImageItem, isAdd: Boolean) {
-        if(mImageSelectedListeners == null) return
-        for(l in mImageSelectedListeners!!) {
+        if (mImageSelectedListeners == null) return
+        for (l in mImageSelectedListeners!!) {
             l.onImageSelected(position, item, isAdd)
         }
     }

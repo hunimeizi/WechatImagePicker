@@ -68,7 +68,7 @@ class ImageViewerActivity : ImageBaseActivity() {
         viewpager!!.setBackgroundResource(attachImmersiveColorRes())
         mAdapter = ImagePageAdapter(this, mImages!!, mPosition)
         ImagePicker.instance.viewerItem(null)
-        mAdapter!!.setPhotoViewClickListener { view, v, v1 ->
+        mAdapter!!.setPhotoViewClickListener { view, _, _ ->
             if(isMultiPhoto) {
                 if(view!!.visibility == View.VISIBLE) {
                     indicator.visibility = View.GONE

@@ -29,23 +29,24 @@ private val startActivityLauncher = StartActivityLauncher(this)
     }
 
     private fun chooseImage(){
-        ImagePicker.instance
-            .activityResultCaller(startActivityLauncher)
-            .multiMode(false) //多选
-            .showCamera(true) //                .selectLimit(9)//最多选几张
-            .crop(true) // 是否裁剪
-            .outPutY((DensityUtil.getScreenWidth(this) * 0.8f).toInt()) // 裁剪图片宽
-            .outPutX((DensityUtil.getScreenWidth(this) * 0.8f).toInt()) // 裁剪图片高
-            .focusWidth((DensityUtil.getScreenWidth(this) * 0.8f).toInt()) //裁剪框 宽
-            .focusHeight((DensityUtil.getScreenWidth(this) * 0.8f).toInt()) // 裁剪框 高
-            .style(CropImageView.Style.RECTANGLE) //裁剪样式 圆形 矩形
-                .selectedListener(object : ImagePicker.OnSelectedListener{
-                    override fun onImageSelected(items: List<ImageItem?>?) {
-                        if (items == null) return
-                        Toast.makeText(this@MainActivity, "图片地址：${items[0]?.imageUrl}", Toast.LENGTH_SHORT).show()
-                    }
-                })
-            .startImagePicker()
+         ImagePicker.instance
+                    .activityResultCaller(startActivityLauncher)
+                    .multiMode(true) //多选
+                    .showCamera(true) //                .selectLimit(9)//最多选几张
+                    .crop(true) // 是否裁剪
+                    .justTakePictures(true) //是否直接拍照
+                    .outPutY((DensityUtil.getScreenWidth(requireActivity()) * 0.8f).toInt()) // 裁剪图片宽
+                    .outPutX((DensityUtil.getScreenWidth(requireActivity()) * 0.8f).toInt()) // 裁剪图片高
+                    .focusWidth((DensityUtil.getScreenWidth(requireActivity()) * 0.8f).toInt()) //裁剪框 宽
+                    .focusHeight((DensityUtil.getScreenWidth(requireActivity()) * 0.8f).toInt()) // 裁剪框 高
+                    .style(CropImageView.Style.RECTANGLE) //裁剪样式 圆形 矩形
+                    .selectedListener(object : ImagePicker.OnSelectedListener {
+                        override fun onImageSelected(items: List<ImageItem?>?) {
+                            if(items == null) return
+                            iv.setImageBitmap(BitmapFactory.decodeFile(items[0]?.imageUrl))
+                        }
+                    })
+                    .startImagePicker()
     }
 ```
 
