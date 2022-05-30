@@ -3,7 +3,7 @@ package com.haolin.android.imagepickerlibrary.imagepicker
 import androidx.fragment.app.FragmentActivity
 import com.permissionx.guolindev.PermissionX
 
-fun FragmentActivity.PermissionRequest(
+internal fun FragmentActivity.PermissionRequest(
     vararg permissions: String,
     permissionSuccess: () -> Unit,
     onFailed: () -> Unit,
