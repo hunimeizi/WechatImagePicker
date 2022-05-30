@@ -2,8 +2,8 @@
 apply plugin: 'io.codearte.nexus-staging'
 buildscript {
     ext {
-        versionName = '1.0.9'
-        versionCode = 12
+        versionName = '2.0.0'
+        versionCode = 13
     }
     ext.kotlin_version = "1.4.32"
     repositories {

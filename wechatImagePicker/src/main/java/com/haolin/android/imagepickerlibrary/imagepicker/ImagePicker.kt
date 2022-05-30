@@ -1,6 +1,7 @@
 package com.haolin.android.imagepickerlibrary.imagepicker
 
 import android.app.Activity
+import android.app.Activity.RESULT_OK
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -12,6 +13,11 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.ActivityResultCallback
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import com.haolin.activityresultlauncher.launcher.StartActivityLauncher
 import com.haolin.android.imagepickerlibrary.imagepicker.bean.ImageFolder
@@ -20,14 +26,9 @@ import com.haolin.android.imagepickerlibrary.imagepicker.loader.ImageLoader
 import com.haolin.android.imagepickerlibrary.imagepicker.ui.AbstractImageGridActivity
 import com.haolin.android.imagepickerlibrary.imagepicker.ui.AbstractImageGridActivity.Companion.EXTRAS_TAKE_PICKERS
 import com.haolin.android.imagepickerlibrary.imagepicker.ui.ImageGridActivity
-import com.haolin.android.imagepickerlibrary.imagepicker.util.ProviderUtil
-import com.haolin.android.imagepickerlibrary.imagepicker.util.Utils
 import com.haolin.android.imagepickerlibrary.imagepicker.view.CropImageView
 import java.io.File
 import java.io.IOException
-import java.text.SimpleDateFormat
-import java.util.*
-import kotlin.collections.ArrayList
 
 class ImagePicker private constructor() {
 
@@ -139,9 +140,9 @@ class ImagePicker private constructor() {
     }
 
     fun getCropCacheFolder(context: Context): File {
-        if (cropCacheFolder == null) {
+        if(cropCacheFolder == null) {
             cropCacheFolder =
-                File(context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.absolutePath!! + "/ImagePicker/cropTemp/")
+                File(context.externalCacheDir?.absolutePath!! + "/cropTemp/")
             cropCacheFolder!!.mkdirs()
         }
         return cropCacheFolder!!
@@ -178,12 +179,12 @@ class ImagePicker private constructor() {
     }
 
     val selectImageCount: Int
-        get() = if (selectedImages == null) {
+        get() = if(selectedImages == null) {
             0
         } else selectedImages!!.size
 
     fun selectedImages(selectedImages: ArrayList<ImageItem>?): ImagePicker? {
-        if (selectedImages == null) {
+        if(selectedImages == null) {
             return null
         }
         this.selectedImages = selectedImages
@@ -191,7 +192,7 @@ class ImagePicker private constructor() {
     }
 
     fun clearSelectedImages() {
-        if (selectedImages != null) selectedImages!!.clear()
+        if(selectedImages != null) selectedImages!!.clear()
     }
 
 
@@ -201,15 +202,15 @@ class ImagePicker private constructor() {
     }
 
     fun clear() {
-        if (mImageSelectedListeners != null) {
+        if(mImageSelectedListeners != null) {
             mImageSelectedListeners!!.clear()
             mImageSelectedListeners = null
         }
-        if (mImageFolders != null) {
+        if(mImageFolders != null) {
             mImageFolders!!.clear()
             mImageFolders = null
         }
-        if (selectedImages != null) {
+        if(selectedImages != null) {
             selectedImages!!.clear()
         }
         currentImageFolderPosition = 0
@@ -219,7 +220,7 @@ class ImagePicker private constructor() {
      * 图片选择
      */
     fun startImagePicker() {
-        if (onImageSelectedListener == null) {
+        if(onImageSelectedListener == null) {
             Log.e(TAG, "\n\n\nOnImageSelectedListener is null , will not return any data\n\n\n")
         }
         activityResultCaller?.launch<ImageGridActivity>(
@@ -230,20 +231,19 @@ class ImagePicker private constructor() {
     }
 
     private fun onActivityResult(resultCode: Int, requestCode: Int, data: Intent?) {
-        if (resultCode == RESULT_CODE_ITEMS) {
-            if (requestCode == 100) {
-                val images: ArrayList<ImageItem?> = data?.getParcelableArrayListExtra(
+        if(resultCode == RESULT_CODE_ITEMS) {
+            if(requestCode == 100) {
+                val images: ArrayList<ImageItem?>? = data?.getParcelableArrayListExtra(
                     EXTRA_RESULT_ITEMS
-                )!!
-                if (onImageSelectedListener != null) {
+                )
+                if(onImageSelectedListener != null) {
                     onImageSelectedListener!!.onImageSelected(images)
                 }
             } else {
-                if (onImageSelectedListener != null) {
+                if(onImageSelectedListener != null) {
                     onImageSelectedListener!!.onImageSelected(null)
                 }
             }
-            Log.v("TAG", "onActivityResult")
             onImageSelectedListener = null
         }
     }
@@ -269,15 +269,15 @@ class ImagePicker private constructor() {
     /**
      * 拍照的方法
      */
-    internal fun takePicture(activity: Activity, requestCode: Int) {
+    internal fun takePicture(activity: AppCompatActivity,launcher: ActivityResultLauncher<Intent>?) {
         val cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
 
-        if (cameraIntent.resolveActivity(activity.packageManager) != null ||
+        if(cameraIntent.resolveActivity(activity.packageManager) != null ||
             activity.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)
         ) {
             createCameraTempImageFile(activity)
-            if (takeImageFile != null && takeImageFile!!.isFile) {
-                val imageUri: Uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+            if(takeImageFile != null && takeImageFile!!.isFile) {
+                val imageUri: Uri = if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
                     FileProvider.getUriForFile(
                         activity,
                         activity.packageName + ".fileprovider",
@@ -287,7 +287,7 @@ class ImagePicker private constructor() {
                 cameraIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) //对目标应用临时授权该Uri所代表的文件
                 cameraIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION) //对目标应用临时授权该Uri所代表的文件
                 cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri) //将拍取的照片保存到指定URI
-                activity.startActivityForResult(cameraIntent, requestCode)
+                launcher?.launch(cameraIntent)
             } else {
                 Toast.makeText(
                     activity, "图片错误",
@@ -304,23 +304,19 @@ class ImagePicker private constructor() {
     }
 
     private fun createCameraTempImageFile(activity: Activity) {
-        var dir =
-            File(
-                Environment.getExternalStorageDirectory().absolutePath + "/" + Environment.DIRECTORY_PICTURES + "/"
-                        + "haolinPicturePicker"
-            )
-        if (!dir.isDirectory) {
-            if (!dir.mkdirs()) {
+        var dir = activity.externalCacheDir!!
+        if(!dir.isDirectory) {
+            if(!dir.mkdirs()) {
                 dir = activity.getExternalFilesDir(null)!!
-                if (!dir.exists()) {
+                if(!dir.exists()) {
                     dir = activity.filesDir
-                    if (null == dir || !dir.exists()) {
+                    if(null == dir || !dir.exists()) {
                         dir = activity.filesDir
-                        if (null == dir || !dir.exists()) {
+                        if(null == dir || !dir.exists()) {
                             val cacheDirPath =
                                 File.separator + "data" + File.separator + "data" + File.separator + activity.packageName + File.separator + "cache" + File.separator
                             dir = File(cacheDirPath)
-                            if (!dir.exists()) {
+                            if(!dir.exists()) {
                                 dir.mkdirs()
                             }
                         }
@@ -330,7 +326,7 @@ class ImagePicker private constructor() {
         }
         takeImageFile = try {
             File.createTempFile("IMG", ".jpg", dir)
-        } catch (e: IOException) {
+        } catch(e: IOException) {
             e.printStackTrace()
             null
         }
@@ -370,7 +366,7 @@ class ImagePicker private constructor() {
          */
         @JvmStatic
         fun galleryAddPic(context: Context, file: File?) {
-            if (file == null) return
+            if(file == null) return
             MediaScannerConnection.scanFile(
                 context, arrayOf(file.absolutePath),
                 arrayOf(file.name), null
@@ -397,23 +393,23 @@ class ImagePicker private constructor() {
     }
 
     fun addOnPictureSelectedListener(l: OnPictureSelectedListener) {
-        if (mImageSelectedListeners == null) mImageSelectedListeners = ArrayList()
+        if(mImageSelectedListeners == null) mImageSelectedListeners = ArrayList()
         mImageSelectedListeners!!.add(l)
     }
 
     fun removeOnPictureSelectedListener(l: OnPictureSelectedListener) {
-        if (mImageSelectedListeners == null) return
+        if(mImageSelectedListeners == null) return
         mImageSelectedListeners!!.remove(l)
     }
 
     fun addSelectedImageItem(position: Int, item: ImageItem, isAdd: Boolean) {
-        if (isAdd) selectedImages!!.add(item) else selectedImages!!.remove(item)
+        if(isAdd) selectedImages!!.add(item) else selectedImages!!.remove(item)
         notifyImageSelectedChanged(position, item, isAdd)
     }
 
     private fun notifyImageSelectedChanged(position: Int, item: ImageItem, isAdd: Boolean) {
-        if (mImageSelectedListeners == null) return
-        for (l in mImageSelectedListeners!!) {
+        if(mImageSelectedListeners == null) return
+        for(l in mImageSelectedListeners!!) {
             l.onImageSelected(position, item, isAdd)
         }
     }

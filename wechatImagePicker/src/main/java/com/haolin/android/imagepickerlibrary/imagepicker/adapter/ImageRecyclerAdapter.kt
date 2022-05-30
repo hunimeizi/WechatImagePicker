@@ -1,7 +1,7 @@
 package com.haolin.android.imagepickerlibrary.imagepicker.adapter
 
 import android.Manifest
-import android.app.Activity
+import android.content.Intent
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -9,24 +9,27 @@ import android.view.ViewGroup
 import android.widget.AbsListView
 import android.widget.ImageView
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.haolin.android.imagepickerlibrary.R
 import com.haolin.android.imagepickerlibrary.imagepicker.ImagePicker
 import com.haolin.android.imagepickerlibrary.imagepicker.ImagePicker.Companion.instance
 import com.haolin.android.imagepickerlibrary.imagepicker.MediaType
-import com.haolin.android.imagepickerlibrary.imagepicker.adapter.ImageRecyclerAdapter
+import com.haolin.android.imagepickerlibrary.imagepicker.PermissionRequest
 import com.haolin.android.imagepickerlibrary.imagepicker.bean.ImageItem
 import com.haolin.android.imagepickerlibrary.imagepicker.ui.AbstractImageGridActivity.Companion.REQUEST_PERMISSION_CAMERA
 import com.haolin.android.imagepickerlibrary.imagepicker.ui.ImageBaseActivity
 import com.haolin.android.imagepickerlibrary.imagepicker.util.Utils
 import com.haolin.android.imagepickerlibrary.imagepicker.view.SuperCheckBox
 
-class ImageRecyclerAdapter(activity: Activity, loadType: MediaType) :
+class ImageRecyclerAdapter(activity: AppCompatActivity, loadType: MediaType,launcher: ActivityResultLauncher<Intent>?) :
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     private val loadType: MediaType = loadType
     private val imagePicker: ImagePicker = instance
-    private val mActivity: Activity = activity
+    private val mActivity: AppCompatActivity = activity
+    private var launcher: ActivityResultLauncher<Intent>? = launcher
     private val images //当前需要显示的所有的图片数据
             : ArrayList<ImageItem> = ArrayList()
     private var mSelectedImages //全局保存的已经选中的图片数据
@@ -95,7 +98,7 @@ class ImageRecyclerAdapter(activity: Activity, loadType: MediaType) :
         fun onImageItemClick(view: View?, imageItem: ImageItem?, position: Int)
     }
 
-    private inner class ImageViewHolder internal constructor(var rootView: View) :
+    private inner class ImageViewHolder(var rootView: View) :
         RecyclerView.ViewHolder(
             rootView) {
         var ivThumb: ImageView
@@ -153,23 +156,19 @@ class ImageRecyclerAdapter(activity: Activity, loadType: MediaType) :
         }
     }
 
-    private inner class CameraViewHolder internal constructor(var mItemView: View) :
+    private inner class CameraViewHolder(var mItemView: View) :
         RecyclerView.ViewHolder(
             mItemView) {
         fun bindCamera() {
             mItemView.layoutParams =
                 AbsListView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, mImageSize) //让图片是个正方形
             mItemView.tag = null
-            mItemView.setOnClickListener { v: View? ->
-                if(!(mActivity as ImageBaseActivity).checkPermission(
-                        Manifest.permission.CAMERA)
-                ) {
-                    ActivityCompat.requestPermissions(mActivity,
-                        arrayOf(Manifest.permission.CAMERA),
-                        REQUEST_PERMISSION_CAMERA)
-                } else {
-                    imagePicker.takePicture(mActivity, ImagePicker.REQUEST_CODE_TAKE)
-                }
+            mItemView.setOnClickListener {
+                (mActivity as ImageBaseActivity).PermissionRequest(Manifest.permission.CAMERA, permissionSuccess = {
+                    imagePicker.takePicture(mActivity,launcher)
+                }, onFailed = {
+                    Toast.makeText(mActivity, "权限被禁止，无法打开相机", Toast.LENGTH_SHORT).show()
+                })
             }
         }
     }

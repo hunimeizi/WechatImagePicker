@@ -1,6 +1,7 @@
 package com.haolin.wechat.image.picker
 
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.haolin.activityresultlauncher.launcher.StartActivityLauncher
@@ -8,6 +9,7 @@ import com.haolin.android.imagepickerlibrary.imagepicker.ImagePicker
 import com.haolin.android.imagepickerlibrary.imagepicker.bean.ImageItem
 import com.haolin.android.imagepickerlibrary.imagepicker.view.CropImageView
 import com.haolin.wechat.image.picker.utils.DensityUtil
+import kotlin.math.log
 
 
 class MainActivity : AppCompatActivity() {
@@ -24,11 +26,11 @@ class MainActivity : AppCompatActivity() {
     private fun chooseImage() {
         ImagePicker.instance
             .activityResultCaller(launcher)
-            .multiMode(true) //多选
+            .multiMode(false) //多选
             .showCamera(true) //
             // .selectLimit(9)//最多选几张
-            .crop(false) // 是否裁剪
-            .justTakePictures(true) //是否直接拍照
+            .crop(true) // 是否裁剪
+//            .justTakePictures(true) //是否直接拍照
             .outPutY((DensityUtil.getScreenWidth(this) * 0.8f).toInt()) // 裁剪图片宽
             .outPutX((DensityUtil.getScreenWidth(this) * 0.8f).toInt()) // 裁剪图片高
             .focusWidth((DensityUtil.getScreenWidth(this) * 0.8f).toInt()) //裁剪框 宽

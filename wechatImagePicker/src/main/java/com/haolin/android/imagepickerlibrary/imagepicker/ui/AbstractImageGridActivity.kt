@@ -3,23 +3,19 @@ package com.haolin.android.imagepickerlibrary.imagepicker.ui
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Bundle
-import android.os.Parcelable
 import android.util.Log
 import android.view.Gravity
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
-import androidx.core.app.ActivityCompat
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.haolin.android.imagepickerlibrary.*
-import com.haolin.android.imagepickerlibrary.imagepicker.DataHolder
-import com.haolin.android.imagepickerlibrary.imagepicker.ImageDataSource
-import com.haolin.android.imagepickerlibrary.imagepicker.ImagePicker
-import com.haolin.android.imagepickerlibrary.imagepicker.MediaType
+import com.haolin.android.imagepickerlibrary.R
+import com.haolin.android.imagepickerlibrary.imagepicker.*
 import com.haolin.android.imagepickerlibrary.imagepicker.adapter.ImageFolderAdapter
 import com.haolin.android.imagepickerlibrary.imagepicker.adapter.ImageRecyclerAdapter
 import com.haolin.android.imagepickerlibrary.imagepicker.bean.ImageFolder
@@ -55,6 +51,9 @@ abstract class AbstractImageGridActivity : ImageBaseActivity(),
     var mRecyclerAdapter: ImageRecyclerAdapter? = null
     var iv_back: View? = null
     var tv_title: TextView? = null
+    private var launcher: ActivityResultLauncher<Intent>? = null
+    private var toCropAct: ActivityResultLauncher<Intent>? = null
+    private var toPreviewAct: ActivityResultLauncher<Intent>? = null
     protected abstract fun attachRecyclerViewRes(): Int
     protected abstract fun attachButtonBackRes(): Int
     protected abstract fun attachButtonOkRes(): Int
@@ -73,11 +72,32 @@ abstract class AbstractImageGridActivity : ImageBaseActivity(),
         return if(isImage) R.string.image else R.string.video
     }
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         imagePicker = ImagePicker.instance
         imagePicker.clear()
         imagePicker.addOnPictureSelectedListener(this)
+        launcher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()
+            ) {
+                if(it.resultCode == RESULT_OK) {
+                    picCorp()
+                }
+            }
+
+        toCropAct =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()
+            ) {
+                setResult(ImagePicker.RESULT_CODE_ITEMS, it.data) //单选不需要裁剪，返回数据
+                finish()
+            }
+        toPreviewAct =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()
+            ) {
+//                setResult(ImagePicker.RESULT_CODE_ITEMS, it.data) //单选不需要裁剪，返回数据
+//                finish()
+            }
         detectPhoto()
         initView()
         initEvent()
@@ -107,31 +127,30 @@ abstract class AbstractImageGridActivity : ImageBaseActivity(),
     private fun initRecycler() {
         Log.i(TAG, "initRecycler: ")
         mImageFolderAdapter = ImageFolderAdapter(this, null)
-        mRecyclerAdapter = ImageRecyclerAdapter(this, MediaType.IMAGE)
+        mRecyclerAdapter = ImageRecyclerAdapter(this, MediaType.IMAGE, launcher)
         mRecyclerAdapter!!.setOnImageItemClickListener(this)
         rc_view!!.layoutManager = GridLayoutManager(this, 3)
         rc_view!!.addItemDecoration(GridSpacingItemDecoration(3, Utils.dip2px(this, 2f), false))
         rc_view!!.adapter = mRecyclerAdapter
         onImageSelected(0, null, false)
-        if(checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-            ImageDataSource(this, null, imagePicker.loadType, this)
-        } else {
-            ActivityCompat.requestPermissions(this,
-                arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
-                REQUEST_PERMISSION_STORAGE)
-        }
+        PermissionRequest(Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            permissionSuccess = {
+                ImageDataSource(this, null, imagePicker.loadType, this)
+            },
+            onFailed = {
+                showToast("权限被禁止，无法获取本地图片")
+            })
     }
 
     private fun detectPhoto() {
         directPhoto = intent.getBooleanExtra(EXTRAS_TAKE_PICKERS, false) // 默认不是直接打开相机
         if(directPhoto) {
-            if(!checkPermission(Manifest.permission.CAMERA)) {
-                ActivityCompat.requestPermissions(this,
-                    arrayOf(Manifest.permission.CAMERA),
-                    REQUEST_PERMISSION_CAMERA)
-            } else {
-                imagePicker.takePicture(this, ImagePicker.REQUEST_CODE_TAKE)
-            }
+            PermissionRequest(Manifest.permission.CAMERA, permissionSuccess = {
+                imagePicker.takePicture(this, launcher)
+            }, onFailed = {
+                showToast("权限被禁止，无法打开相机")
+            })
         }
         val images: ArrayList<ImageItem>? = intent.getParcelableArrayListExtra(EXTRAS_IMAGES)
         imagePicker.selectedImages(images)
@@ -206,7 +225,7 @@ abstract class AbstractImageGridActivity : ImageBaseActivity(),
                 imagePicker.selectedImages)
             intent.putExtra(AbstractImagePreviewActivity.ISORIGIN, isOrigin)
             intent.putExtra(ImagePicker.EXTRA_FROM_ITEMS, true)
-            startActivityForResult(intent, ImagePicker.REQUEST_CODE_PREVIEW)
+            toPreviewAct?.launch(intent)
         } else if(id == attachButtonBackRes()) {
             finish()
         }
@@ -219,10 +238,8 @@ abstract class AbstractImageGridActivity : ImageBaseActivity(),
             imagePicker.currentImageFolderPosition(position)
             mFolderPopupWindow!!.dismiss()
             val imageFolder = adapterView.adapter.getItem(position) as ImageFolder
-            if(null != imageFolder) {
-                mRecyclerAdapter!!.bindData(imageFolder.images)
-                tv_dir!!.text = imageFolder.name
-            }
+            mRecyclerAdapter!!.bindData(imageFolder.images)
+            tv_dir!!.text = imageFolder.name
         }
         mFolderPopupWindow!!.setMargin(footer_bar!!.height)
     }
@@ -243,23 +260,22 @@ abstract class AbstractImageGridActivity : ImageBaseActivity(),
 
     override fun onImageItemClick(view: View?, imageItem: ImageItem?, position: Int) {
         //根据是否有相机按钮确定位置
-        var position = position
-        position = if(imagePicker.isShowCamera) position - 1 else position
+        var mPosition = position
+        mPosition = if(imagePicker.isShowCamera) mPosition - 1 else mPosition
         if(imagePicker.isMultiMode) {
             val intent = Intent(this, attachPreviewActivityClass())
-            intent.putExtra(ImagePicker.EXTRA_SELECTED_IMAGE_POSITION, position)
+            intent.putExtra(ImagePicker.EXTRA_SELECTED_IMAGE_POSITION, mPosition)
             DataHolder.instance.save(DataHolder.DH_CURRENT_IMAGE_FOLDER_ITEMS,
                 imagePicker.currentImageFolderItems)
             intent.putExtra(AbstractImagePreviewActivity.ISORIGIN, isOrigin)
-            startActivityForResult(intent, ImagePicker.REQUEST_CODE_PREVIEW) //如果是多选，点击图片进入预览界面
+            toPreviewAct?.launch(intent)
         } else {
             imagePicker.clearSelectedImages()
-            imagePicker.addSelectedImageItem(position,
-                imagePicker.currentImageFolderItems[position],
+            imagePicker.addSelectedImageItem(mPosition,
+                imagePicker.currentImageFolderItems[mPosition],
                 true)
             if(imagePicker.isCrop) {
-                val intent = Intent(this, attachCropActivityClass())
-                startActivityForResult(intent, ImagePicker.REQUEST_CODE_CROP) //单选需要裁剪，进入裁剪界面
+                toCropAct?.launch(Intent(this, attachCropActivityClass()))
             } else {
                 val intent = Intent()
                 intent.putParcelableArrayListExtra(ImagePicker.EXTRA_RESULT_ITEMS,
@@ -300,67 +316,22 @@ abstract class AbstractImageGridActivity : ImageBaseActivity(),
         }
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if(data != null && data.extras != null) {
-            if(resultCode == ImagePicker.RESULT_CODE_BACK) {
-                isOrigin = data.getBooleanExtra(AbstractImagePreviewActivity.ISORIGIN, false)
-            } else {
-                //从拍照界面返回
-                //点击 X , 没有选择照片
-                if(data.getParcelableArrayListExtra<Parcelable>(ImagePicker.EXTRA_RESULT_ITEMS) == null) {
-                    //什么都不做 直接调起相机
-                } else {
-                    //说明是从裁剪页面过来的数据，直接返回就可以
-                    setResult(ImagePicker.RESULT_CODE_ITEMS, data)
-                }
-                finish()
-            }
+    private fun picCorp() {
+        //发送广播通知图片增加了
+        ImagePicker.galleryAddPic(this, imagePicker.takeImageFile)
+        val path = imagePicker.takeImageFile!!.absolutePath
+        val imageItem = ImageItem()
+        imageItem.path = path
+        imagePicker.clearSelectedImages()
+        imagePicker.addSelectedImageItem(0, imageItem, true)
+        if(imagePicker.isCrop) {
+            toCropAct?.launch(Intent(this, attachCropActivityClass()))
         } else {
-            //如果是裁剪，因为裁剪指定了存储的Uri，所以返回的data一定为null
-            if(resultCode == RESULT_OK) {
-                //发送广播通知图片增加了
-                ImagePicker.galleryAddPic(this, imagePicker.takeImageFile)
-                val path = imagePicker.takeImageFile!!.absolutePath
-                val imageItem = ImageItem()
-                imageItem.path = path
-                imagePicker.clearSelectedImages()
-                imagePicker.addSelectedImageItem(0, imageItem, true)
-                if(imagePicker.isCrop) {
-                    val intent = Intent(this, attachCropActivityClass())
-                    startActivityForResult(intent, ImagePicker.REQUEST_CODE_CROP) //单选需要裁剪，进入裁剪界面
-                } else {
-                    val intent = Intent()
-                    intent.putParcelableArrayListExtra(ImagePicker.EXTRA_RESULT_ITEMS,
-                        imagePicker.selectedImages)
-                    setResult(ImagePicker.RESULT_CODE_ITEMS, intent) //单选不需要裁剪，返回数据
-                    finish()
-                }
-            } else if(directPhoto) {
-                finish()
-            }
-        }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray,
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if(requestCode == REQUEST_PERMISSION_STORAGE) {
-            if(grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Log.i(TAG, "onRequestPermissionsResult: ")
-                ImageDataSource(this, null, imagePicker.loadType, this)
-            } else {
-                showToast("权限被禁止，无法选择本地图片")
-            }
-        } else if(requestCode == REQUEST_PERMISSION_CAMERA) {
-            if(grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                imagePicker.takePicture(this, ImagePicker.REQUEST_CODE_TAKE)
-            } else {
-                showToast("权限被禁止，无法打开相机")
-            }
+            val intent = Intent()
+            intent.putParcelableArrayListExtra(ImagePicker.EXTRA_RESULT_ITEMS,
+                imagePicker.selectedImages)
+            setResult(ImagePicker.RESULT_CODE_ITEMS, intent) //单选不需要裁剪，返回数据
+            finish()
         }
     }
 
