@@ -1,7 +1,6 @@
 package com.haolin.android.imagepickerlibrary.imagepicker.ui
 
 import android.annotation.SuppressLint
-import android.annotation.TargetApi
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
@@ -28,14 +27,6 @@ class ImageViewerActivity : ImageBaseActivity() {
         initViewPager()
     }
 
-    override fun attachStatusEmbed(): Boolean {
-        return true
-    }
-
-    override fun attachNavigationEmbed(): Boolean {
-        return true
-    }
-
     private fun initData() {
         mImages = ImagePicker.instance.viewerItem
         mPosition = intent.getIntExtra(ImagePicker.EXTRA_SELECTED_IMAGE_POSITION, 0)
@@ -47,36 +38,13 @@ class ImageViewerActivity : ImageBaseActivity() {
         back.setOnClickListener({ onBackPressed() })
     }
 
-    override fun attachImmersiveColorRes(): Int {
-        return R.color.black
-    }
-
-    override fun attachTopBarRes(): Int {
-        return 0
-    }
-
-    override fun attachImmersiveLightMode(): Boolean {
-        return false
-    }
-
     override fun attachLayoutRes(): Int {
-        postponeEnterTransition()
         return R.layout.imagepicker_activity_image_viewer
     }
 
     private fun initViewPager() {
-        viewpager!!.setBackgroundResource(attachImmersiveColorRes())
         mAdapter = ImagePageAdapter(this, mImages!!, mPosition)
         ImagePicker.instance.viewerItem(null)
-        mAdapter!!.setPhotoViewClickListener { view, _, _ ->
-            if(isMultiPhoto) {
-                if(view!!.visibility == View.VISIBLE) {
-                    indicator.visibility = View.GONE
-                } else {
-                    indicator.visibility = View.VISIBLE
-                }
-            }
-        }
         viewpager!!.adapter = mAdapter
         viewpager!!.currentItem = mPosition
         viewpager!!.addOnPageChangeListener(object : OnPageChangeListener {
@@ -109,7 +77,6 @@ class ImageViewerActivity : ImageBaseActivity() {
         super.finishAfterTransition()
     }
 
-    @TargetApi(21)
     private fun setSharedElementCallback(view: View?) {
         setEnterSharedElementCallback(object : SharedElementCallback() {
             override fun onMapSharedElements(

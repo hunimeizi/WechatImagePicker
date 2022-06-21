@@ -5,10 +5,8 @@ import android.os.Bundle
 import android.text.format.Formatter
 import android.util.Log
 import android.view.View
-import android.view.animation.AnimationUtils
 import android.widget.*
 import androidx.viewpager.widget.ViewPager.SimpleOnPageChangeListener
-import com.hacknife.immersive.Immersive
 import com.haolin.android.imagepickerlibrary.R
 import com.haolin.android.imagepickerlibrary.imagepicker.DataHolder
 import com.haolin.android.imagepickerlibrary.imagepicker.ImagePicker
@@ -31,7 +29,6 @@ abstract class AbstractImagePreviewActivity : ImageBaseActivity(),
             : TextView? = null
     protected var selectedImages //所有已经选中的图片
             : ArrayList<ImageItem>? = null
-    protected var top_bar: View? = null
     protected var viewpager: ViewPagerFixed? = null
     protected var mAdapter: ImagePageAdapter? = null
     private var isOrigin //是否选中原图
@@ -55,7 +52,6 @@ abstract class AbstractImagePreviewActivity : ImageBaseActivity(),
     }
 
     private fun initView() {
-        top_bar = findViewById(attachTopBarRes())
         btn_ok = findViewById(attachButtonOkRes())
         iv_back = findViewById(attachButtonBackRes())
         tv_title = findViewById(attachTitleRes())
@@ -84,7 +80,7 @@ abstract class AbstractImagePreviewActivity : ImageBaseActivity(),
 
     private fun initEvent() {
         btn_ok!!.visibility = View.GONE
-        iv_back!!.setOnClickListener { v: View? -> finish() }
+        iv_back!!.setOnClickListener { finish() }
         imagePicker!!.addOnPictureSelectedListener(this)
         btn_ok!!.visibility = View.VISIBLE
         btn_ok!!.setOnClickListener(this)
@@ -103,11 +99,6 @@ abstract class AbstractImagePreviewActivity : ImageBaseActivity(),
 
     private fun initViewPager() {
         mAdapter = ImagePageAdapter(this, CollectionHelper.imageItem2String(mImageItems))
-        mAdapter!!.setPhotoViewClickListener( object : ImagePageAdapter.PhotoViewClickListener {
-            override fun OnPhotoTapListener(view: View?, v: Float, v1: Float) {
-                onImageSingleTap()
-            }
-        })
         viewpager!!.adapter = mAdapter
         viewpager!!.setCurrentItem(mCurrentPosition, false)
     }
@@ -155,18 +146,6 @@ abstract class AbstractImagePreviewActivity : ImageBaseActivity(),
                 view_bottom!!.visibility = View.GONE
             }
         })
-        NavigationBarChangeListener.with(this, NavigationBarChangeListener.ORIENTATION_HORIZONTAL)
-            .setListener(object : NavigationBarChangeListener.OnSoftInputStateChangeListener {
-                override fun onNavigationBarShow(orientation: Int, height: Int) {
-                    top_bar!!.setPadding(0, 0, height, 0)
-                    bottom_bar!!.setPadding(0, 0, height, 0)
-                }
-
-                override fun onNavigationBarHide(orientation: Int) {
-                    top_bar!!.setPadding(0, 0, 0, 0)
-                    bottom_bar!!.setPadding(0, 0, 0, 0)
-                }
-            })
     }
 
     protected abstract fun attachViewPagerRes(): Int
@@ -229,14 +208,6 @@ abstract class AbstractImagePreviewActivity : ImageBaseActivity(),
         }
     }
 
-    override fun attachNavigationEmbed(): Boolean {
-        return true
-    }
-
-    override fun attachStatusEmbed(): Boolean {
-        return true
-    }
-
     override fun onCheckedChanged(buttonView: CompoundButton, isChecked: Boolean) {
         val id = buttonView.id
         if(id == attachCheckOriginRes()) {
@@ -257,33 +228,6 @@ abstract class AbstractImagePreviewActivity : ImageBaseActivity(),
         imagePicker!!.removeOnPictureSelectedListener(this)
         super.onDestroy()
     }
-
-    /**
-     * 单击时，隐藏头和尾
-     */
-    fun onImageSingleTap() {
-        if(top_bar!!.visibility == View.VISIBLE) {
-            top_bar!!.animation =
-                AnimationUtils.loadAnimation(this, R.anim.imagepicker_top_out)
-            bottom_bar!!.animation =
-                AnimationUtils.loadAnimation(this, R.anim.imagepicker_fade_out)
-            top_bar!!.visibility = View.GONE
-            bottom_bar!!.visibility = View.GONE
-            Immersive.setNavigationBarColorRes(this, attachImmersiveColorRes(false))
-            Immersive.setStatusBarColorRes(this, attachImmersiveColorRes(false))
-        } else {
-            top_bar!!.animation =
-                AnimationUtils.loadAnimation(this, R.anim.imagepicker_top_in)
-            bottom_bar!!.animation =
-                AnimationUtils.loadAnimation(this, R.anim.imagepicker_fade_in)
-            top_bar!!.visibility = View.VISIBLE
-            bottom_bar!!.visibility = View.VISIBLE
-            Immersive.setNavigationBarColorRes(this, attachImmersiveColorRes(true))
-            Immersive.setStatusBarColorRes(this, attachImmersiveColorRes(true))
-        }
-    }
-
-    protected abstract fun attachImmersiveColorRes(show: Boolean): Int
 
     companion object {
         const val ISORIGIN = "isOrigin"

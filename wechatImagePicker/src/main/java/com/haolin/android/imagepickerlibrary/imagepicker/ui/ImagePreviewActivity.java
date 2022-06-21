@@ -5,21 +5,6 @@ import com.haolin.android.imagepickerlibrary.R;
 
 public class ImagePreviewActivity extends AbstractImagePreviewActivity {
     @Override
-    protected int attachImmersiveColorRes() {
-        return R.color.ip_color_primary_dark;
-    }
-
-    @Override
-    protected int attachTopBarRes() {
-        return R.id.ll_top_bar;
-    }
-
-    @Override
-    protected boolean attachImmersiveLightMode() {
-        return false;
-    }
-
-    @Override
     protected int attachLayoutRes() {
         return R.layout.imagepicker_activity_image_preview;
     }
@@ -62,14 +47,6 @@ public class ImagePreviewActivity extends AbstractImagePreviewActivity {
     @Override
     protected int attachButtonBackRes() {
         return R.id.iv_back;
-    }
-
-    @Override
-    protected int attachImmersiveColorRes(boolean show) {
-        if (show)
-            return R.color.ip_color_primary_dark;
-        else
-            return R.color.ip_color_primary_dark;
     }
 
 }

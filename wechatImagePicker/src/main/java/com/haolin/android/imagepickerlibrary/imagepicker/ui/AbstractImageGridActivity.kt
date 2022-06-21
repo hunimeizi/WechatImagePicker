@@ -104,14 +104,6 @@ abstract class AbstractImageGridActivity : ImageBaseActivity(),
         initRecycler()
     }
 
-    override fun attachNavigationEmbed(): Boolean {
-        return false
-    }
-
-    override fun attachStatusEmbed(): Boolean {
-        return false
-    }
-
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         Log.i(TAG, "onSaveInstanceState: ")

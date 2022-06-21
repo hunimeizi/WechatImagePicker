@@ -17,10 +17,6 @@
         android:clickable="true"
         android:orientation="vertical">
 
-        <com.hacknife.immersive.StatusView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-
         <ImageView
             android:id="@+id/iv_back"
             android:layout_width="48dp"

@@ -29,7 +29,7 @@ class MainActivity : AppCompatActivity() {
             .multiMode(false) //多选
             .showCamera(true) //
             // .selectLimit(9)//最多选几张
-            .crop(true) // 是否裁剪
+            .crop(false) // 是否裁剪
 //            .justTakePictures(true) //是否直接拍照
             .outPutY((DensityUtil.getScreenWidth(this) * 0.8f).toInt()) // 裁剪图片宽
             .outPutX((DensityUtil.getScreenWidth(this) * 0.8f).toInt()) // 裁剪图片高

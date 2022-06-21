@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="60dp"
+    android:layout_height="48dp"
     android:id="@+id/top_bar"
     app:contentInsetStart="0dp"
     android:background="#393A3F">

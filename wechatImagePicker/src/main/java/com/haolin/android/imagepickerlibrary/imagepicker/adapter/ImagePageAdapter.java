@@ -23,7 +23,7 @@ public class ImagePageAdapter extends PagerAdapter {
     public PhotoViewClickListener listener;
     private int mPosition;
     private ImagePicker imagePicker;
-    private List<String> images = new ArrayList<>();
+    private List<String> images;
     private AppCompatActivity mActivity;
     private boolean mIsFromViewr = false;
     private View currentView;
@@ -46,16 +46,11 @@ public class ImagePageAdapter extends PagerAdapter {
         this.images = images;
     }
 
-    public void setPhotoViewClickListener(PhotoViewClickListener listener) {
-        this.listener = listener;
-    }
-
     @Override
     public int getCount() {
         return images.size();
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     public Object instantiateItem(ViewGroup container, int position) {
         PhotoView photoView = new PhotoView(mActivity);
@@ -66,24 +61,16 @@ public class ImagePageAdapter extends PagerAdapter {
             imagePicker.getImageLoader().displayUserImage(photoView, image);
         else
             imagePicker.getImageLoader().displayFileImage(photoView, image);
-        photoView.setOnPhotoTapListener(new OnPhotoTapListener() {
-            @Override
-            public void onPhotoTap(ImageView view, float x, float y) {
-                if (listener != null) listener.OnPhotoTapListener(view, x, y);
-            }
+        photoView.setOnPhotoTapListener((view, x, y) -> {
+            if (listener != null) listener.OnPhotoTapListener(view, x, y);
         });
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && mIsFromViewr) {
+        if (mIsFromViewr) {
             String name = mActivity.getString(R.string.share_view_photo) + position;
             photoView.setTransitionName(name);
             if (position == mPosition)
                 setStartPostTransition(photoView);
         }
-        photoView.setOnOutsidePhotoTapListener(new OnOutsidePhotoTapListener() {
-            @Override
-            public void onOutsidePhotoTap(ImageView imageView) {
-                mActivity.onBackPressed();
-            }
-        });
+        photoView.setOnOutsidePhotoTapListener(imageView -> mActivity.onBackPressed());
         container.addView(photoView);
         return photoView;
     }

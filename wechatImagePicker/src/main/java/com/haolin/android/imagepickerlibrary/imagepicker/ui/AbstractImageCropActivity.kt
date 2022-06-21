@@ -64,13 +64,7 @@ abstract class AbstractImageCropActivity : ImageBaseActivity(), View.OnClickList
     protected abstract fun attachTitleRes(): Int
     protected abstract fun attachButtonBackRes(): Int
     protected abstract fun attachButtonOkRes(): Int
-    override fun attachNavigationEmbed(): Boolean {
-        return false
-    }
 
-    override fun attachStatusEmbed(): Boolean {
-        return false
-    }
 
     fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int): Int {
         val width = options.outWidth

@@ -24,21 +24,6 @@ public class ImageCropActivity extends AbstractImageCropActivity {
     }
 
     @Override
-    protected int attachImmersiveColorRes() {
-        return R.color.ip_color_primary_dark;
-    }
-
-    @Override
-    protected int attachTopBarRes() {
-        return R.id.top_bar;
-    }
-
-    @Override
-    protected boolean attachImmersiveLightMode() {
-        return false;
-    }
-
-    @Override
     protected int attachLayoutRes() {
         return R.layout.imagepicker_activity_image_crop;
     }
