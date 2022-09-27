@@ -3,6 +3,7 @@ package com.haolin.android.imagepickerlibrary.imagepicker.ui
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.Gravity
@@ -125,24 +126,31 @@ abstract class AbstractImageGridActivity : ImageBaseActivity(),
         rc_view!!.addItemDecoration(GridSpacingItemDecoration(3, Utils.dip2px(this, 2f), false))
         rc_view!!.adapter = mRecyclerAdapter
         onImageSelected(0, null, false)
-        PermissionRequest(Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.READ_EXTERNAL_STORAGE,
+        val requestList = ArrayList<String>()
+        requestList.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requestList.add(Manifest.permission.READ_MEDIA_IMAGES)
+            requestList.add(Manifest.permission.READ_MEDIA_VIDEO)
+        }else{
+            requestList.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
+        PermissionRequest(requestList,
             permissionSuccess = {
                 ImageDataSource(this, null, imagePicker.loadType, this)
-            },
-            onFailed = {
-                showToast("权限被禁止，无法获取本地图片")
-            })
+            }
+        ) {
+            showToast("权限被禁止，无法获取本地图片")
+        }
     }
 
     private fun detectPhoto() {
         directPhoto = intent.getBooleanExtra(EXTRAS_TAKE_PICKERS, false) // 默认不是直接打开相机
         if(directPhoto) {
-            PermissionRequest(Manifest.permission.CAMERA, permissionSuccess = {
+            PermissionRequest(listOf(Manifest.permission.CAMERA), permissionSuccess = {
                 imagePicker.takePicture(this, launcher)
-            }, onFailed = {
+            }) {
                 showToast("权限被禁止，无法打开相机")
-            })
+            }
         }
         val images: ArrayList<ImageItem>? = intent.getParcelableArrayListExtra(EXTRAS_IMAGES)
         imagePicker.selectedImages(images)

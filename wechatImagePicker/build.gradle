@@ -5,10 +5,10 @@ plugins {
 }
 
 android {
-    compileSdkVersion 32
+    compileSdkVersion 33
     defaultConfig {
         minSdkVersion 23
-        targetSdkVersion 32
+        targetSdkVersion 33
         versionCode versionCode
         versionName versionName
 
@@ -39,7 +39,7 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     compileOnly("io.github.hunimeizi:haolinActivityResultLauncher:1.0.0")
     compileOnly("io.coil-kt:coil:1.4.0")
-    compileOnly("com.guolindev.permissionx:permissionx:1.5.0")
+    compileOnly("com.guolindev.permissionx:permissionx:1.7.1")
 }
 ext {
     // These could be set globally

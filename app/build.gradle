@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-    compileSdkVersion 32
+    compileSdkVersion 33
 
     defaultConfig {
         applicationId "com.haolin.wechat.image.picker"
         minSdkVersion 23
-        targetSdkVersion 32
+        targetSdkVersion 33
         versionCode 1
         versionName "1.0"
 
@@ -46,6 +46,6 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
     implementation project(':wechatImagePicker')
     implementation 'io.coil-kt:coil:1.4.0'
-    implementation 'com.guolindev.permissionx:permissionx:1.5.0'
+    implementation 'com.guolindev.permissionx:permissionx:1.7.1'
     implementation 'io.github.hunimeizi:haolinActivityResultLauncher:1.0.0'
 }

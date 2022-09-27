@@ -11,7 +11,6 @@ import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.haolin.android.imagepickerlibrary.R
 import com.haolin.android.imagepickerlibrary.imagepicker.ImagePicker
@@ -164,11 +163,11 @@ class ImageRecyclerAdapter(activity: AppCompatActivity, loadType: MediaType,laun
                 AbsListView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, mImageSize) //让图片是个正方形
             mItemView.tag = null
             mItemView.setOnClickListener {
-                (mActivity as ImageBaseActivity).PermissionRequest(Manifest.permission.CAMERA, permissionSuccess = {
+                (mActivity as ImageBaseActivity).PermissionRequest(listOf(Manifest.permission.CAMERA), permissionSuccess = {
                     imagePicker.takePicture(mActivity,launcher)
-                }, onFailed = {
+                }) {
                     Toast.makeText(mActivity, "权限被禁止，无法打开相机", Toast.LENGTH_SHORT).show()
-                })
+                }
             }
         }
     }
