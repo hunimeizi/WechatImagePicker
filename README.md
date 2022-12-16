@@ -9,7 +9,7 @@ repositories {
 }
 
 dependencies {
-  implementation 'io.github.hunimeizi:haolinPicturePicker:2.1.1'
+  implementation 'io.github.hunimeizi:haolinPicturePicker:2.1.2'
   //以下务必全部依赖
     implementation 'io.coil-kt:coil:1.4.0'
     implementation 'com.guolindev.permissionx:permissionx:1.7.1'
