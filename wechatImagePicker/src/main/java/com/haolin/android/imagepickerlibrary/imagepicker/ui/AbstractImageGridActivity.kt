@@ -127,11 +127,11 @@ abstract class AbstractImageGridActivity : ImageBaseActivity(),
         rc_view!!.adapter = mRecyclerAdapter
         onImageSelected(0, null, false)
         val requestList = ArrayList<String>()
-        requestList.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             requestList.add(Manifest.permission.READ_MEDIA_IMAGES)
             requestList.add(Manifest.permission.READ_MEDIA_VIDEO)
         }else{
+            requestList.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
             requestList.add(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
         PermissionRequest(requestList,
